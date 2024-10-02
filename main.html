@@ -1,0 +1,656 @@
+<meta name="viewport" content="width=device-width, initial-scale=0.6">
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Anchored Monotonic Alignment and Representation Substitution for Rare Spontaneous Behaviors in Spontaneous
+    Speech Synthesis</title>
+  <style>
+    div {
+      margin-bottom: 64px;
+    }
+
+    .first-col {
+      padding-right: 40px;
+      white-space: nowrap;
+    }
+
+    .text {
+      color: #666666;
+      font-size: 12;
+      width: 190px;
+    }
+
+    .justified {
+      text-align: justify;
+    }
+  </style>
+</head>
+
+<body>
+  <article>
+    <header>
+      <h1>Anchored Monotonic Alignment and Representation Substitution for Rare Spontaneous Behaviors in Spontaneous
+        Speech Synthesis</h1>
+    </header>
+  </article>
+
+  <div>
+    <h2>Abstract</h2>
+    <p class="justified">Spontaneous behaviors in speech present significant challenges for speech synthesis. Current
+      research in this area has not sufficiently addressed these behaviors, and most studies rely on specially recorded
+      data. In contrast, real-world data is generally more reflective of the natural, spontaneous speaking styles of
+      daily life and exhibits a wider variety of spontaneous behaviors. However, this type of data is often not of
+      studio-quality, and the distribution of different spontaneous behaviors is highly imbalanced. In this study, we
+      investigate spontaneous speech synthesis using real-world data within the VITS2 framework. To handle rare
+      spontaneous behaviors, we introduce two methods: anchored monotonic alignment and spontaneous hidden
+      representation substitution. Experimental results show that these methods improve model alignment, resolve
+      difficulties in synthesizing rare spontaneous behaviors, and significantly enhance the naturalness of synthesized
+      speech.</p>
+    <b>This page is for research demonstration purposes only.
+  </div>
+
+  <div>
+    <h2>Model Overview</h2>
+    <img src="models.png" height="800">
+  </div>
+
+  <div>
+    <h2>Spontaneous Behaviors</h2>
+    <table border="1" cellpadding="5" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Spontaneous Behavior</th>
+          <th>Abbreviation</th>
+          <th>Definition</th>
+          <th>Example (Text)</th>
+          <th>Example (Audio)</th>
+          <th>Occurrences</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Breathing</td>
+          <td>[BR]</td>
+          <td>Short inhalations or exhalations by the speaker during speech.</td>
+          <td>那么中间[BR]造各种各样的道路，[BR]它把就是整[DS]一大块的[PL]田地。</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/Example_Breathing.wav">
+            </audio></td>
+          <td>91,565</td>
+        </tr>
+        <tr>
+          <td>Disfluency</td>
+          <td>[DS]</td>
+          <td>Abnormal interruptions in the speaker's flow of speech.</td>
+          <td>转移到其他的方面去，而[DS]家长[DS]和学校现[BR]在并不能[SI][IP]在引导小孩的兴趣方面做的更好[BR]。</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/Example_Disfluency.wav">
+            </audio></td>
+          <td>49,071</td>
+        </tr>
+        <tr>
+          <td>Prolongation</td>
+          <td>[PL]</td>
+          <td>Elongation of sounds, usually vowels, at the end of words.</td>
+          <td>这样的趋势对[PL]国人的话，是一个很好的帮助[BR]。</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/Example_Prolongation.wav">
+            </audio></td>
+          <td>10,040</td>
+        </tr>
+        <tr>
+          <td>Mispronunciation</td>
+          <td>[MP]</td>
+          <td>Very short erroneous syllables produced due to slips of the tongue.</td>
+          <td>所以我[MP]，我想具体的讲一下，[BR]我在自己生活中，我在[MP]自己学校，特别学校生活中的一些生活经历。</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/Example_Mispronunciation.wav">
+            </audio></td>
+          <td>8,309</td>
+        </tr>
+        <tr>
+          <td>Silence</td>
+          <td>[SI]</td>
+          <td>Longer pauses of silence occurring between words.</td>
+          <td>是吧[BR]，这个[SI]有很多事情也不能[SI]指责人家司机一方面的是吧。</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/Example_Silence.wav">
+            </audio></td>
+          <td>4,223</td>
+        </tr>
+        <tr>
+          <td>Sniffles*</td>
+          <td>[SN]</td>
+          <td>The sound of inhalation through the nose.</td>
+          <td>我就告诉他们说，我说[SN]恩特殊教育啊就是针对，恩聋哑儿童。</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/Example_Sniffles.wav">
+            </audio></td>
+          <td>2,320</td>
+        </tr>
+        <tr>
+          <td>Deep inspiration*</td>
+          <td>[IP]</td>
+          <td>Heavy or deep breaths made through the mouth.</td>
+          <td>恩[PL]，我们系又是冠军，并且得到了那个栋梁杯[IP]。</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/Example_Deep.wav">
+            </audio></td>
+          <td>1,317</td>
+        </tr>
+        <tr>
+          <td>Laughing*</td>
+          <td>[LA]</td>
+          <td>Audible laughter or chuckles that occur during speech.</td>
+          <td>然后我才知道[BR]原来是我的胎破了，[BR]恩[LA]结果没有办法只有停在路边。</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/Example_Laughing.wav">
+            </audio></td>
+          <td>767</td>
+        </tr>
+      </tbody>
+    </table>
+    <b> * Defined as rare spontaneous behaviors
+  </div>
+
+
+  <div>
+    <h2>Demos</h2>
+    <hr>
+    <h3>Naturalness (RASC863 Speaker)</h3></a>
+    <table>
+      <tbody>
+        <tr>
+          <td class="first-col">(Real Behavior) Text</td>
+          <td class="text">
+            有时候他回答[MP]提出来的问题让你都<b>[IP]</b>没有办法回答[BR]。
+          </td>
+          <td class="text">
+            应该[DS]应该<b>[LA]</b>尽量多出去旅游吧，就只能这么说啦[BR]。
+          </td>
+          <td class="text">
+            恩所以嘞[BR]他可能还要[PL]去接待导师啊<b>[SN]</b>。
+          </td>
+          <td class="text">
+            铁树呢，也是一次[MP]，也是一次到那个朝阳路市场[BR]，看到[PL]人家推着车子[BR]。
+          </td>
+          <td class="text">
+            是吧[BR]，这个[SI]有很多事情也不能[SI]指责人家司机一方面的是吧。
+          </td>
+        </tr>
+        <tr>
+          <td class="first-col">(Real Behavior) Ground Truth</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/11_gt.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/12_gt.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/13_gt.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/14_gt.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/15_gt.wav">
+            </audio></td>
+        </tr>
+        <tr>
+          <td class="first-col">(Real Behavior) Proposed</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/11_ppr.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/12_ppr.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/13_ppr.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/14_ppr.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/15_ppr.wav">
+            </audio></td>
+        </tr>
+        <tr>
+          <td class="first-col">(Real Behavior) Baseline VITS2</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/11_bsr.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/12_bsr.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/13_bsr.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/14_bsr.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/15_bsr.wav">
+            </audio></td>
+        </tr>
+
+        <tr>
+          <td class="first-col">(Predicted Behavior) Text</td>
+          <td class="text">
+            有时候他回答[DS]提出来的问题让你都没有办法回答[BR]。
+          </td>
+          <td class="text">
+            应该应该尽量多出去旅游吧[BR]，就只能这么说啦[BR]。
+          </td>
+          <td class="text">
+            恩所以嘞他可能还要去接待导师啊[BR]。
+          </td>
+          <td class="text">
+            铁树呢，也是一次，也是一次到那个朝阳路市场，看到人家推着车子<b>[IP]</b>。
+          </td>
+          <td class="text">
+            是吧，这个[PL]有很多事情也不能指责人家司机一方面的是吧。
+          </td>
+        </tr>
+        <tr>
+          <td class="first-col">(Predicted Behavior) Proposed</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/11_ppp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/12_ppp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/13_ppp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/14_ppp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/15_ppp.wav">
+            </audio></td>
+        </tr>
+
+        <tr>
+          <td class="first-col">(Predicted Behavior) Baseline VITS2</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/11_bsp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/12_bsp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/13_bsp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/14_bsp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/15_bsp.wav">
+            </audio></td>
+        </tr>
+      </tbody>
+    </table>
+    <hr>
+    <h3>Naturalness (BiaoBei Speaker)</h3></a>
+    <table>
+      <tbody>
+        <tr>
+          <td class="first-col">Ground Truth</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/000001.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/000002.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/000003.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/000004.wav">
+            </audio></td>
+        </tr>
+         
+        <tr>
+        </tr>
+        <tr>
+          <td class="first-col">(Real Behavior) Text</td>
+          <td class="text">
+            有时候他回答[MP]提出来的问题让你都<b>[IP]</b>没有办法回答[BR]。
+          </td>
+          <td class="text">
+            应该[DS]应该<b>[LA]</b>尽量多出去旅游吧，就只能这么说啦[BR]。
+          </td>
+          <td class="text">
+            恩所以嘞[BR]他可能还要[PL]去接待导师啊<b>[SN]</b>。
+          </td>
+          <td class="text">
+            铁树呢，也是一次[MP]，也是一次到那个朝阳路市场[BR]，看到[PL]人家推着车子[BR]。
+          </td>
+          <td class="text">
+            是吧[BR]，这个[SI]有很多事情也不能[SI]指责人家司机一方面的是吧。
+          </td>
+        </tr>
+        <tr>
+          <td class="first-col">(Real Behavior) Proposed</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/11_ppr_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/12_ppr_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/13_ppr_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/14_ppr_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/15_ppr_bb.wav">
+            </audio></td>
+        </tr>
+        <tr>
+          <td class="first-col">(Real Behavior) Baseline VITS2</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/11_bsr_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/12_bsr_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/13_bsr_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/14_bsr_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/15_bsr_bb.wav">
+            </audio></td>
+        </tr>
+
+        <tr>
+          <td class="first-col">(Predicted Behavior) Text</td>
+          <td class="text">
+            有时候他回答[DS]提出来的问题让你都没有办法回答[BR]。
+          </td>
+          <td class="text">
+            应该应该尽量多出去旅游吧[BR]，就只能这么说啦[BR]。
+          </td>
+          <td class="text">
+            恩所以嘞他可能还要去接待导师啊[BR]。
+          </td>
+          <td class="text">
+            铁树呢，也是一次，也是一次到那个朝阳路市场，看到人家推着车子<b>[IP]</b>。
+          </td>
+          <td class="text">
+            是吧，这个[PL]有很多事情也不能指责人家司机一方面的是吧。
+          </td>
+        </tr>
+        <tr>
+          <td class="first-col">(Predicted Behavior) Proposed</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/11_ppp_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/12_ppp_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/13_ppp_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/14_ppp_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/15_ppp_bb.wav">
+            </audio></td>
+        </tr>
+
+        <tr>
+          <td class="first-col">(Predicted Behavior) Baseline VITS2</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/11_bsp_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/12_bsp_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/13_bsp_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/14_bsp_bb.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/15_bsp_bb.wav">
+            </audio></td>
+        </tr>
+      </tbody>
+    </table>
+    <hr>
+
+
+    <h3>Rare Spontaneous Behavior Synthesis</h3></a>
+    <table>
+      <tbody>
+        <tr>
+          <td class="first-col">(Target) Text</td>
+          <td class="text">
+            可可能是<b>[IP]</b>由于发挥失误吧我的我的成绩[DS]一下子[DS]退了好多好多<b>[IP]</b>。
+          </td>
+          <td class="text">
+            那么如果这个家教呢能够[PL]<b>[IP]</b>请老师辅导一些<b>[IP]</b>。
+          </td>
+          <td class="text">
+            是吧[BR]，这个[SI]有很多事情也不能[SI]指责人家司机一方面的<b>[LA]</b>是吧<b>[LA]</b>。
+          </td>
+          <td class="text">
+            唉<b>[LA]</b>星期六的我们主要是[MP]大概分为四个车[BR]唉五个车<b>[LA]</b>。
+          </td>
+          <td class="text">
+            恩<b>[SN]</b>更多的时候体现的是<b>[SN]</b>一个[BR]集体的运动[BR]。
+          </td>
+          <td class="text">
+            啊<b>[SN]</b>然后还认识了很多[PL]朋友吧<b>[SN]</b>，也是[BR]他们叫什么叫同好的啊[DS]。
+          </td>
+        </tr>
+        <tr>
+          <td class="first-col">(Target) Baseline VITS2</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/01_bs.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/02_bs.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/03_bs.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/04_bs.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/05_bs.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/06_bs.wav">
+            </audio></td>
+        </tr>
+        <tr>
+          <td class="first-col">(Target) Proposed w/o <br> Representation Substitution</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/01_ppw.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/02_ppw.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/03_ppw.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/04_ppw.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/05_ppw.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/06_ppw.wav">
+            </audio></td>
+        </tr>
+        <tr>
+          <td class="first-col">(Target) proposed</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/01_pp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/02_pp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/03_pp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/04_pp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/05_pp.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/06_pp.wav">
+            </audio></td>
+        </tr>
+
+    
+        <tr>
+          <td class="first-col">(Reference 1) Text</td>
+          <td class="text">
+            因此到后来的话<b>[IP]</b>就不怎么踢了主要的话就是那个[BR]。
+          </td>
+          <td class="text">
+            自己开了一些便利店，所以说，总的来说，<b>[IP]</b>购物也还算方便。
+          </td>
+          <td class="text">
+            到了初中呢就被[SI]恩初中在田径队混不下去了<b>[LA]</b>[BR]。
+          </td>
+          <td class="text">
+            还有<b>[LA]</b>她都很很疼爱我们侄侄子吗。
+          </td>
+          <td class="text">
+            然后那个<b>[SN]</b>有就是平和堂那个附近的有一个卖糖油粑粑的地方，挺挺挺有名的也是经常排队[BR]。
+          </td>
+          <td class="text">
+            [BR]就[SI][MP]见到字就读，这就是最好的方法<b>[SN]</b>。
+          </td>
+        </tr>
+        <tr>
+          <td class="first-col">(Reference 1) Wave</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/01_ref1.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/02_ref1.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/03_ref1.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/04_ref1.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/05_ref1.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/06_ref1.wav">
+            </audio></td>
+        </tr>
+        <tr>
+          <td class="first-col">(Reference 1) Spontaneous Behavior</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/01_ref1b.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/02_ref1b.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/03_ref1b.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/04_ref1b.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/05_ref1b.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/06_ref1b.wav">
+            </audio></td>
+        </tr>
+        <tr>
+          <td class="first-col">(Reference 2) Text</td>
+          <td class="text">
+            然后你到<b>[IP]</b>呃[PL]我们派出所然后在协商[BR]。
+          </td>
+          <td class="text">
+            呃在反正在生活中吧，遇到这个[BR]，孩子遇到的问题有很多<b>[IP]</b>。
+          </td>
+          <td class="text">
+            就象孔子一样，书而不作<b>[LA]</b>。
+          </td>
+          <td class="text">
+            [BR]他指导了我一些[DS]嗯我认为我自己[BR]有些方面做得不好的地方<b>[LA]</b>。
+          </td>
+          <td class="text">
+            恩我的爸爸<b>[SN]</b>，是我一生中最佩服的人。
+          </td>
+          <td class="text">
+            我同学呢正好是跟着我，<b>[SN]</b>然后我就会指点她。我说[BR]这里呀，会掉进泥坑里的[BR]。
+          </td>
+        </tr>
+        <tr>
+          <td class="first-col">(Reference 2) Wave</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/01_ref2.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/02_ref2.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/03_ref2.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/04_ref2.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/05_ref2.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/06_ref2.wav">
+            </audio></td>
+        </tr>
+        <tr>
+          <td class="first-col">(Reference 2) Spontaneous Behavior</td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/01_ref2b.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/02_ref2b.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/03_ref2b.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/04_ref2b.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/05_ref2b.wav">
+            </audio></td>
+          <td><audio controls style="width: 190px;" preload="none">
+              <source src="wavs/06_ref2b.wav">
+            </audio></td>
+        </tr>
+      </tbody>
+    </table>
+    <hr>
+
+  </div>
+
+
+
+</body>
+
+</html>
